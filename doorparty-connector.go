@@ -35,9 +35,9 @@ func connChan(conn net.Conn) chan []byte {
 // Returns magic booleans so we'll know which side errored / disconnected
 func pipeConns(c1 net.Conn, c2 net.Conn) bool {
 	ch1 := connChan(c1)
-    ch2 := connChan(c2)
-    for {
-        select {
+	ch2 := connChan(c2)
+	for {
+		select {
 			case b1 := <- ch1:
 				if b1 == nil {
 					return false
@@ -50,8 +50,8 @@ func pipeConns(c1 net.Conn, c2 net.Conn) bool {
 				} else {
 					c1.Write(b2)
 				}
-        }
-    }
+		}
+	}
 }
 
 func doTunnel(localConn net.Conn, cfg *ini.File) {
