@@ -58,10 +58,6 @@ func doTunnel(localConn net.Conn, cfg *ini.File) {
 	
 	defer localConn.Close()
 
-	// Strip any square brackets from the config file's system_tag value
-	systemTagRe := regexp.MustCompile(`\[|\]`)
-	systemTag := systemTagRe.ReplaceAllString(cfg.Section("").Key("system_tag").Value(), "")
-
 	// Read the RLogin client username, server username, and termtype parameters from the client
 	rloginInit := make([]byte, 512)
 	_, err := localConn.Read(rloginInit)
@@ -72,9 +68,18 @@ func doTunnel(localConn net.Conn, cfg *ini.File) {
 	// Slice of "", client username, server username, terminal-type
 	rloginData := strings.Split(string(rloginInit), "\x00")
 
-	// Strip the system tag from the username in case the BBS included it
-	userNameRe := regexp.MustCompile(`^\[.*\]`)
-	userName := userNameRe.ReplaceAllString(rloginData[2], "")
+	userName := ""
+	userNameRe := regexp.MustCompile(`^\[.+\].+`)
+	// If the RLogin username contains a system tag, leave it as is
+	if userNameRe.MatchString(rloginData[2]) {
+		userName = rloginData[2];
+	// Otherwise, prefix it with the system tag from the config file
+	} else {
+		// Strip any square brackets from the config file's system_tag value
+		systemTagRe := regexp.MustCompile(`\[|\]`)
+		systemTag := systemTagRe.ReplaceAllString(cfg.Section("").Key("system_tag").Value(), "")
+		userName = fmt.Sprintf("[%s]%s", systemTag, rloginData[2]);
+	}
 
 	// Connect to the SSH server and authenticate
 	sshConfig := &ssh.ClientConfig{
@@ -107,8 +112,8 @@ func doTunnel(localConn net.Conn, cfg *ini.File) {
 	log.Printf("%s connected to RLogin server %s via SSH tunnel", userName, rloginHost);
 
 	// "Authenticate" and begin the actual RLogin session through the tunnel
-	log.Printf("%s starting RLogin session for [%s]%s, terminal type: %s", userName, systemTag, userName, rloginData[3])
-	fmt.Fprintf(remoteConn, "\x00%s\x00[%s]%s\x00%s\x00", rloginData[1], systemTag, userName, rloginData[3])
+	log.Printf("%s starting RLogin session, terminal type: %s", userName, rloginData[3])
+	fmt.Fprintf(remoteConn, "\x00%s\x00%s\x00%s\x00", rloginData[1], userName, rloginData[3])
 
 	// Pipe data between local client and remote RLogin server until one of them closes/errors
 	remoteClosed := pipeConns(localConn, remoteConn)
