@@ -17,8 +17,12 @@ This program was written in [Go](https://golang.org/), and you can build it from
 	* Edit `local_interface` and `local_port` if the default values don't suit your system
 	* Leave the other values at in their default state.  They have been made customizable just in case the remote server's details change in the future.
 	
+### Linux
+
+A [systemd unit file](doorparty-connector.service) is available.  It assumes that `doorparty-connector` and `doorparty-connector.ini` reside within `/opt/doorparty-connector`, so edit the unit file if you placed this program elsewhere.
+	
 ## Usage
 
-`doorparty-connector` runs as a server, by default listening on TCP port `9999` of `localhost` for connections from RLogin clients.  You must start it up and leave it running. `(To do: daemonize / init script / upstart / systemd stuff)`.  A typical installation has `doorparty-connector` running on the same machine that hosts your BBS - but this isn't a requirement.
+`doorparty-connector` runs as a server, by default listening on TCP port `9999` of `localhost` for connections from RLogin clients.  You must start it up and leave it running.  A typical installation has `doorparty-connector` running on the same machine that hosts your BBS - but this isn't a requirement.
 
 When a user on your BBS chooses to connect to DoorParty, your BBS should open an RLogin connection to `doorparty-connector`, likely running on the same machine. `doorparty-connector` then connects the user to DoorParty's RLogin server via an SSH tunnel.
