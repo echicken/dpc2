@@ -19,7 +19,11 @@ This program was written in [Go](https://golang.org/), and you can build it from
 	
 ### Linux
 
-A [systemd unit file](doorparty-connector.service) is available.  It assumes that `doorparty-connector` and `doorparty-connector.ini` reside within `/opt/doorparty-connector`, so edit the unit file if you placed this program elsewhere.
+For automatic startup, a [systemd unit file](doorparty-connector.service) is available.  It assumes that `doorparty-connector` and `doorparty-connector.ini` reside within `/opt/doorparty-connector`, so edit the unit file if you placed this program elsewhere.
+
+### Windows
+
+I dunno, put a shortcut in your startup items menu or some shit like that.
 	
 ## Usage
 
