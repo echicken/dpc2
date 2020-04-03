@@ -88,7 +88,7 @@ In the `Command Line` of the above example, `lord` is a "door code" that tells D
 	* If DoorParty Connector is listening on a port other than `9999`
 		* Under the `[doorparty]` section, create a key named `tunnel_port`; set this to the port that DoorParty Connector is listening on	
 
-##### Migration from sbbs-dp-rlogin.js)
+##### Migration from sbbs-dp-rlogin.js
 
 Follow these steps only if you were using the older `sbbs-dp-rlogin.js` script that came with the previous version of DoorParty Connector.
 
