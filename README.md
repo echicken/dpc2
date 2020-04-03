@@ -40,6 +40,10 @@ When a user on your BBS chooses to connect to DoorParty:
 		* The user does not need to know this value
 	* `doorparty-connector` then connects the user to DoorParty's RLOGIN server via an SSH tunnel, passing the necessary user details along
 		* An account is automatically created for the user on the DoorParty server if it doesn't already exist
+			* This account is linked to this user on your BBS
+			* The user can only access it from your BBS
+			* The user does not need to know the password
+			* The user may have several DoorParty accounts, one for each BBS they connect from; they cannot use the same DoorParty account from multiple BBSs
 
 On Mystic, for example, this is menu command `IR`, with a `DATA` field like:
 * `/ADDR=localhost:9999 /USER=[system_tag]@USER@ /PASS=some_password`
