@@ -31,9 +31,23 @@ I dunno, put a shortcut in your Startup menu or some shit like that.
 
 `doorparty-connector` runs as a server, by default listening on TCP port `9999` of `localhost` for connections from RLOGIN clients.  You must start it up and leave it running.  A typical installation has `doorparty-connector` running on the same machine that hosts your BBS - but this isn't a requirement.
 
-When a user on your BBS chooses to connect to DoorParty, your BBS should open an RLOGIN connection to `doorparty-connector`, likely running on the same machine. `doorparty-connector` then connects the user to DoorParty's RLOGIN server via an SSH tunnel.
+When a user on your BBS chooses to connect to DoorParty:
+
+* Your BBS should open an RLOGIN connection to `doorparty-connector` (eg. port `9999` on `localhost`)
+	* The RLOGIN "server-user-name" is the user's alias prefixed with your DoorParty "system tag", eg. `[ec]echicken`
+	* The RLOGIN "client-user-name" is the user's DoorParty password
+		* You can use whatever you like for this value, and even use the same value for all users if you must, but you must always send the same password for the same user every time they connect
+		* The user does not need to know this value
+	* `doorparty-connector` then connects the user to DoorParty's RLOGIN server via an SSH tunnel, passing the necessary user details along
+		* An account is automatically created for the user on the DoorParty server if it doesn't already exist
+
+On Mystic, for example, this is menu command `IR`, with a `DATA` field like:
+* `/ADDR=localhost:9999 /USER=[system_tag]@USER@ /PASS=some_password`
+	* Mind that `system_tag` and `some_password` must be replaced with your own values
 
 ### Synchronet
+
+A [script](https://raw.githubusercontent.com/echicken/dpc2/master/synchronet/doorparty.js) is available for Synchronet BBS which makes it simple to set up the connection between your BBS and DoorParty Connector.
 
 * If you don't already have a `mods` directory, create one at the top level of your Synchronet BBS installation (alongside `ctrl`, `data`, `exec`, etc.)
 * Place a copy of [doorparty.js](https://raw.githubusercontent.com/echicken/dpc2/master/synchronet/doorparty.js) in your Synchronet `mods` directory
