@@ -1,6 +1,6 @@
 load('sbbsdefs.js');
 var userprops = load({}, "userprops.js");
-var cfg = load({}, 'modopts.js', "doorparty");
+var cfg = load({}, 'modopts.js', "doorparty") || {};
 
 var attr = console.attributes;
 
