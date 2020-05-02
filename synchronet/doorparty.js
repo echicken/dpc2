@@ -30,7 +30,7 @@ console.clear(LIGHTGRAY);
 console.putmsg('Connecting to DoorParty, please wait ...');
 
 bbs.rlogin_gate(
-    (cfg.tunnel_host || 'dp.throwbackbbs.com') + ':' + (cfg.tunnel_port || 9999),
+    (cfg.tunnel_host || 'localhost') + ':' + (cfg.tunnel_port || 9999),
     get_password(), // password
     user.alias,
     argv.length ? argv[0] : undefined
