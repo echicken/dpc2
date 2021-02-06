@@ -19,9 +19,7 @@ function get_password() {
     if (cfg.password) return cfg.password; // If a system-wide password has been set, use it
     var password = userprops.get('doorparty', 'password', '');
     if (password != '') return password; // If the user has a DoorParty password on file, use it
-    while (!bbs.good_password(password)) {
-        password = make_password();
-    }
+    password = make_password();
     userprops.set('doorparty', 'password', password); // Store a DoorParty password for this user
     return password;
 }
