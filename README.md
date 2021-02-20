@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/golang-standards/project-layout?style=flat-square)](https://goreportcard.com/report/github.com/echicken/dpc2)
+[![Go Report Card](https://goreportcard.com/badge/github.com/echicken/dpc2?style=flat-square)](https://goreportcard.com/report/github.com/echicken/dpc2)
 
 
 # dpc2
