@@ -132,8 +132,10 @@ func init() {
 
 func main() {
 
-	fn := os.Args[1]
-	if fn == "" {
+	var fn string
+	if len(os.Args) >= 2 {
+		fn = os.Args[1]
+	} else {
 		fn = "doorparty-connector.ini"
 	}
 
