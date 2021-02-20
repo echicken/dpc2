@@ -52,7 +52,7 @@ func Get() Config {
 		SSHUsername:    getSetting("SSH_USERNAME", iniFile, ""),
 		SSHPassword:    getSetting("SSH_PASSWORD", iniFile, ""),
 		LocalInterface: getSetting("LOCAL_INTERFACE", iniFile, "0.0.0.0"),
-		LocalPort:      getSetting("LOCAL_PORT", iniFile, "513"),
+		LocalPort:      getSetting("LOCAL_PORT", iniFile, "9999"),
 		SSHHost:        getSetting("SSH_HOST", iniFile, "dp.throwbackbbs.com"),
 		SSHPort:        getSetting("SSH_PORT", iniFile, "2022"),
 		RLoginHost:     getSetting("RLOGIN_HOST", iniFile, "dp.throwbackbbs.com"),
