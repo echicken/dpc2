@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"regexp"
 	"strings"
 
@@ -12,7 +13,44 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-func doTunnel(localConn net.Conn, cfg *ini.File) {
+func getSetting(val string, iniFile *ini.File, defaultValue string) string {
+	var ret = os.Getenv(val)
+	if ret == "" {
+		ret = iniFile.Section("").Key(strings.ToLower(val)).Value()
+	}
+	if ret == "" {
+		return defaultValue
+	}
+	return ret
+}
+
+type config struct {
+	systemTag      string
+	sshUsername    string
+	sshPassword    string
+	localInterface string
+	localPort      string
+	sshHost        string
+	sshPort        string
+	rloginHost     string
+	rloginPort     string
+}
+
+func getConfig(iniFile *ini.File) config {
+	var cfg = config{}
+	cfg.systemTag = getSetting("SYSTEM_TAG", iniFile, "")
+	cfg.sshUsername = getSetting("SSH_USERNAME", iniFile, "")
+	cfg.sshPassword = getSetting("SSH_PASSWORD", iniFile, "")
+	cfg.localInterface = getSetting("LOCAL_INTERFACE", iniFile, "0.0.0.0")
+	cfg.localPort = getSetting("LOCAL_PORT", iniFile, "513")
+	cfg.sshHost = getSetting("SSH_HOST", iniFile, "dp.throwbackbbs.com")
+	cfg.sshPort = getSetting("SSH_PORT", iniFile, "2022")
+	cfg.rloginHost = getSetting("RLOGIN_HOST", iniFile, "dp.throwbackbbs.com")
+	cfg.rloginPort = getSetting("RLOGIN_PORT", iniFile, "513")
+	return cfg
+}
+
+func doTunnel(localConn net.Conn, cfg config) {
 
 	defer localConn.Close()
 
@@ -39,20 +77,20 @@ func doTunnel(localConn net.Conn, cfg *ini.File) {
 	} else {
 		// Strip any square brackets from the config file's system_tag value
 		systemTagRe := regexp.MustCompile(`\[|\]`)
-		systemTag := systemTagRe.ReplaceAllString(cfg.Section("").Key("system_tag").Value(), "")
+		systemTag := systemTagRe.ReplaceAllString(cfg.systemTag, "")
 		userName = fmt.Sprintf("[%s]%s", systemTag, rloginData[2])
 	}
 
 	// Connect to the SSH server and authenticate
 	sshConfig := &ssh.ClientConfig{
-		User: cfg.Section("").Key("ssh_username").Value(),
-		Auth: []ssh.AuthMethod{ssh.Password(cfg.Section("").Key("ssh_password").Value())},
+		User: cfg.sshUsername,
+		Auth: []ssh.AuthMethod{ssh.Password(cfg.sshPassword)},
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			// Always accept key.
 			return nil
 		},
 	}
-	sshHost := fmt.Sprintf("%s:%s", cfg.Section("").Key("ssh_host").Value(), cfg.Section("").Key("ssh_port").Value())
+	sshHost := fmt.Sprintf("%s:%s", cfg.sshHost, cfg.sshPort)
 	log.Printf("%s connecting to SSH server %s", userName, sshHost)
 	serverConn, err := ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
@@ -63,7 +101,7 @@ func doTunnel(localConn net.Conn, cfg *ini.File) {
 	log.Printf("%s connected to SSH server %s", userName, sshHost)
 
 	// Connect to the RLogin server via the SSH connection
-	rloginHost := fmt.Sprintf("%s:%s", cfg.Section("").Key("rlogin_host").Value(), cfg.Section("").Key("rlogin_port").Value())
+	rloginHost := fmt.Sprintf("%s:%s", cfg.rloginHost, cfg.rloginPort)
 	log.Printf("%s connecting to RLogin server %s via SSH tunnel", userName, rloginHost)
 	remoteConn, err := serverConn.Dial("tcp", rloginHost)
 	if err != nil {
@@ -94,12 +132,20 @@ func init() {
 
 func main() {
 
-	cfg, err := ini.Load("doorparty-connector.ini")
-	if err != nil {
-		log.Fatalf("Error reading doorparty-connector.ini: %v", err)
+	fn := os.Args[1]
+	if fn == "" {
+		fn = "doorparty-connector.ini"
 	}
 
-	localInterface := fmt.Sprintf("%s:%s", cfg.Section("").Key("local_interface").Value(), cfg.Section("").Key("local_port").Value())
+	sf, err := ini.LooseLoad(fn)
+	if err != nil {
+		log.Fatalf("Error reading %v: %v", fn, err)
+	}
+
+	cfg := getConfig(sf)
+
+	// localInterface := fmt.Sprintf("%s:%s", sf.Section("").Key("local_interface").Value(), sf.Section("").Key("local_port").Value())
+	localInterface := fmt.Sprintf("%s:%s", cfg.localInterface, cfg.localPort)
 	listener, err := net.Listen("tcp", localInterface)
 	if err != nil {
 		log.Fatalf("Bind error: %v", err)
