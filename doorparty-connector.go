@@ -2,69 +2,31 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/crypto/ssh"
-	"gopkg.in/ini.v1"
+	"io"
 	"log"
 	"net"
 	"regexp"
 	"strings"
+
+	"golang.org/x/crypto/ssh"
+	"gopkg.in/ini.v1"
 )
 
-// Ripped from StackOverflow or something
-func connChan(conn net.Conn) chan []byte {
-    c := make(chan []byte)
-    go func() {
-        b := make([]byte, 1024)
-        for {
-            n, err := conn.Read(b)
-            if n > 0 {
-                res := make([]byte, n)
-                // Copy the buffer so it doesn't get changed while read by the recipient.
-                copy(res, b[:n])
-                c <- res
-            }
-            if err != nil {
-                c <- nil
-                break
-            }
-        }
-    }()
-    return c
-}
-
-// Returns magic booleans so we'll know which side errored / disconnected
-func pipeConns(c1 net.Conn, c2 net.Conn) bool {
-	ch1 := connChan(c1)
-	ch2 := connChan(c2)
-	for {
-		select {
-			case b1 := <- ch1:
-				if b1 == nil {
-					return false
-				} else {
-					c2.Write(b1)
-				}
-			case b2 := <- ch2:
-				if b2 == nil {
-					return true
-				} else {
-					c1.Write(b2)
-				}
-		}
-	}
-}
-
 func doTunnel(localConn net.Conn, cfg *ini.File) {
-	
+
 	defer localConn.Close()
+
+	localConn.Write([]byte("\x00"))
 
 	// Read the RLogin client username, server username, and termtype parameters from the client
 	rloginInit := make([]byte, 512)
 	_, err := localConn.Read(rloginInit)
 	if err != nil {
-		log.Printf("Error reading initial RLogin data from local client")
+		log.Printf("Error reading initial RLogin data from local client: %v %v", rloginInit, err)
 		return
 	}
+	localConn.Write([]byte("\x00"))
+
 	// Slice of "", client username, server username, terminal-type
 	rloginData := strings.Split(string(rloginInit), "\x00")
 
@@ -72,13 +34,13 @@ func doTunnel(localConn net.Conn, cfg *ini.File) {
 	userNameRe := regexp.MustCompile(`^\[.+\].+`)
 	// If the RLogin username contains a system tag, leave it as is
 	if userNameRe.MatchString(rloginData[2]) {
-		userName = rloginData[2];
-	// Otherwise, prefix it with the system tag from the config file
+		userName = rloginData[2]
+		// Otherwise, prefix it with the system tag from the config file
 	} else {
 		// Strip any square brackets from the config file's system_tag value
 		systemTagRe := regexp.MustCompile(`\[|\]`)
 		systemTag := systemTagRe.ReplaceAllString(cfg.Section("").Key("system_tag").Value(), "")
-		userName = fmt.Sprintf("[%s]%s", systemTag, rloginData[2]);
+		userName = fmt.Sprintf("[%s]%s", systemTag, rloginData[2])
 	}
 
 	// Connect to the SSH server and authenticate
@@ -109,24 +71,24 @@ func doTunnel(localConn net.Conn, cfg *ini.File) {
 		return
 	}
 	defer remoteConn.Close()
-	log.Printf("%s connected to RLogin server %s via SSH tunnel", userName, rloginHost);
+	log.Printf("%s connected to RLogin server %s via SSH tunnel", userName, rloginHost)
 
 	// "Authenticate" and begin the actual RLogin session through the tunnel
 	log.Printf("%s starting RLogin session, terminal type: %s", userName, rloginData[3])
 	fmt.Fprintf(remoteConn, "\x00%s\x00%s\x00%s\x00", rloginData[1], userName, rloginData[3])
 
-	// Pipe data between local client and remote RLogin server until one of them closes/errors
-	remoteClosed := pipeConns(localConn, remoteConn)
-	if (remoteClosed) {
-		log.Printf("%s disconnected by remote server", userName)
-	} else {
-		log.Printf("%s disconnected locally", userName)
-	}
+	go func() {
+		io.Copy(remoteConn, localConn)
+	}()
+	io.Copy(localConn, remoteConn)
+
+	localConn.Close()
+	log.Printf("%s disconnected", userName)
 
 }
 
 func init() {
-	log.SetFlags(log.Ldate|log.Ltime)
+	log.SetFlags(log.Ldate | log.Ltime)
 	log.Print("Initialized")
 }
 
@@ -155,5 +117,5 @@ func main() {
 		log.Print("Accepted connection")
 		go doTunnel(localConn, cfg)
 	}
-	
+
 }
