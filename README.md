@@ -30,7 +30,7 @@ You may use the following environment variables to provide settings to doorparty
 | SSH_USERNAME | |
 | SSH_PASSWORD | |
 | LOCAL_INTERFACE | 0.0.0.0 |
-| LOCAL_PORT | 513 |
+| LOCAL_PORT | 9999 |
 | SSH_HOST | dp.throwbackbbs.com |
 | SSH_PORT | 2022 |
 | RLOGIN_HOST | dp.throwbackbbs.com |
