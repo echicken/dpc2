@@ -18,10 +18,11 @@ type rLoginClient struct {
 	termType string
 }
 
+// Read the RLogin client username, server username, and termtype parameters from the client
 func rloginInit(localConn net.Conn, cfg config.Config) (*rLoginClient, error) {
+
 	localConn.Write([]byte("\x00"))
 
-	// Read the RLogin client username, server username, and termtype parameters from the client
 	rlb := make([]byte, 512)
 	_, err := localConn.Read(rlb)
 	if err != nil {
@@ -32,7 +33,7 @@ func rloginInit(localConn net.Conn, cfg config.Config) (*rLoginClient, error) {
 	// Slice of "", client username, server username, terminal-type
 	rloginData := strings.Split(string(rlb), "\x00")
 
-	rlc := rLoginClient{
+	rlc := &rLoginClient{
 		password: rloginData[1],
 		termType: rloginData[3],
 	}
@@ -49,7 +50,54 @@ func rloginInit(localConn net.Conn, cfg config.Config) (*rLoginClient, error) {
 		rlc.userName = fmt.Sprintf("[%s]%s", systemTag, rloginData[2])
 	}
 
-	return &rlc, nil
+	return rlc, nil
+
+}
+
+// Connect to the SSH server and authenticate
+func sshConnect(cfg config.Config) (*ssh.Client, error) {
+
+	sshConfig := &ssh.ClientConfig{
+		User: cfg.SSHUsername,
+		Auth: []ssh.AuthMethod{ssh.Password(cfg.SSHPassword)},
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			// Always accept key.
+			return nil
+		},
+	}
+
+	sshHost := fmt.Sprintf("%s:%s", cfg.SSHHost, cfg.SSHPort)
+	serverConn, err := ssh.Dial("tcp", sshHost, sshConfig)
+
+	return serverConn, err
+
+}
+
+// Connect to the RLogin server via the SSH connection
+func startTunnel(cfg config.Config, rlc *rLoginClient, serverConn *ssh.Client) (net.Conn, error) {
+
+	rloginHost := fmt.Sprintf("%s:%s", cfg.RLoginHost, cfg.RLoginPort)
+	log.Printf("%s connecting to RLogin server %s via SSH tunnel", rlc.userName, rloginHost)
+
+	remoteConn, err := serverConn.Dial("tcp", rloginHost)
+	if err != nil {
+		return remoteConn, err
+	}
+
+	// "Authenticate" and begin the actual RLogin session through the tunnel
+	log.Printf("%s starting RLogin session, terminal type: %s", rlc.userName, rlc.termType)
+	fmt.Fprintf(remoteConn, "\x00%s\x00%s\x00%s\x00", rlc.password, rlc.userName, rlc.termType)
+
+	return remoteConn, err
+
+}
+
+func doTunnel(remoteConn net.Conn, localConn net.Conn) {
+	go func() {
+		io.Copy(remoteConn, localConn)
+	}()
+	io.Copy(localConn, remoteConn)
+	localConn.Close()
 }
 
 // Start an SSH tunnel
@@ -63,46 +111,24 @@ func Start(localConn net.Conn, cfg config.Config) {
 		return
 	}
 
-	// Connect to the SSH server and authenticate
-	sshConfig := &ssh.ClientConfig{
-		User: cfg.SSHUsername,
-		Auth: []ssh.AuthMethod{ssh.Password(cfg.SSHPassword)},
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			// Always accept key.
-			return nil
-		},
-	}
-	sshHost := fmt.Sprintf("%s:%s", cfg.SSHHost, cfg.SSHPort)
-	log.Printf("%s connecting to SSH server %s", rlc.userName, sshHost)
-	serverConn, err := ssh.Dial("tcp", sshHost, sshConfig)
+	serverConn, err := sshConnect(cfg)
 	if err != nil {
 		log.Printf("%s encountered error connecting to SSH server: %v", rlc.userName, err)
 		return
 	}
 	defer serverConn.Close()
-	log.Printf("%s connected to SSH server %s", rlc.userName, sshHost)
+	log.Printf("%s connected to SSH server %s:%s", rlc.userName, cfg.SSHHost, cfg.SSHPort)
 
-	// Connect to the RLogin server via the SSH connection
-	rloginHost := fmt.Sprintf("%s:%s", cfg.RLoginHost, cfg.RLoginPort)
-	log.Printf("%s connecting to RLogin server %s via SSH tunnel", rlc.userName, rloginHost)
-	remoteConn, err := serverConn.Dial("tcp", rloginHost)
+	remoteConn, err := startTunnel(cfg, rlc, serverConn)
 	if err != nil {
 		log.Printf("%s encountered error connecting to RLogin server via SSH tunnel: %v", rlc.userName, err)
 		return
 	}
 	defer remoteConn.Close()
-	log.Printf("%s connected to RLogin server %s via SSH tunnel", rlc.userName, rloginHost)
+	log.Printf("%s connected to RLogin server %s:%s via SSH tunnel", rlc.userName, cfg.RLoginHost, cfg.RLoginPort)
 
-	// "Authenticate" and begin the actual RLogin session through the tunnel
-	log.Printf("%s starting RLogin session, terminal type: %s", rlc.userName, rlc.termType)
-	fmt.Fprintf(remoteConn, "\x00%s\x00%s\x00%s\x00", rlc.password, rlc.userName, rlc.termType)
+	doTunnel(remoteConn, localConn)
 
-	go func() {
-		io.Copy(remoteConn, localConn)
-	}()
-	io.Copy(localConn, remoteConn)
-
-	localConn.Close()
 	log.Printf("%s disconnected", rlc.userName)
 
 }
