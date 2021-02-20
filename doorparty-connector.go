@@ -144,7 +144,6 @@ func main() {
 
 	cfg := getConfig(sf)
 
-	// localInterface := fmt.Sprintf("%s:%s", sf.Section("").Key("local_interface").Value(), sf.Section("").Key("local_port").Value())
 	localInterface := fmt.Sprintf("%s:%s", cfg.localInterface, cfg.localPort)
 	listener, err := net.Listen("tcp", localInterface)
 	if err != nil {
