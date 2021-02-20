@@ -19,7 +19,23 @@ This program was written in [Go](https://golang.org/), and you can build it from
 	* Fill out `system_tag`, `ssh_username`, and `ssh_password` with the values you were given by the DoorParty administrator (you can omit the [square brackets] from your `system_tag`)
 	* Edit `local_interface` and `local_port` if the default values don't suit your system
 	* Leave the other values at in their default state.  They have been made customizable just in case the remote server's details change in the future.
-	
+
+### doorparty-connector.ini is optional
+
+You may use the following environment variables to provide settings to doorparty-connector instead:
+
+| Variable | Default |
+|----------|---------|
+| SYSTEM_TAG | |
+| SSH_USERNAME | |
+| SSH_PASSWORD | |
+| LOCAL_INTERFACE | 0.0.0.0 |
+| LOCAL_PORT | 513 |
+| SSH_HOST | dp.throwbackbbs.com |
+| SSH_PORT | 2022 |
+| RLOGIN_HOST | dp.throwbackbbs.com |
+| RLOGIN_PORT | 513 |
+
 ### Linux
 
 For automatic startup, a [systemd unit file](init/doorparty-connector.service) is available.  It assumes that `doorparty-connector` and `doorparty-connector.ini` reside within `/opt/doorparty-connector`, so edit the path as needed.
