@@ -85,7 +85,7 @@ When a user on your BBS chooses to connect to DoorParty:
 			* The user may have several DoorParty accounts, one for each BBS they connect from; they cannot use the same DoorParty account from multiple BBSs
 
 On Mystic, for example, this is menu command `IR`, with a `DATA` field like:
-* `/ADDR=localhost:9999 /USER=[system_tag]@USER@ /PASS=some_password`
-	* Mind that `system_tag` and `some_password` must be replaced with your own values
+* `/ADDR=localhost:9999 /USER=@USER@ /PASS=some_password`
+	* Mind that `some_password` must be replaced with your own values
 
 A [script](third_party/synchronet/doorparty.js) and [instructions for Synchronet](third_party/synchronet/) are available [here](third_party/synchronet/).
