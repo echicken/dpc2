@@ -45,6 +45,26 @@ If you use some other init system, you're on your own - but feel free to share y
 ### Windows
 
 I dunno, put a shortcut in your Startup menu or some shit like that.
+
+### Docker
+
+```
+docker run -d \
+  --restart=unless-stopped \
+  -p 9999:9999 \
+  -e SYSTEM_TAG=[???] \
+  -e SSH_USERNAME=YOURUSER \
+  -e SSH_PASSWORD=YOURPASS \
+  -e LOCAL_PORT=9999 \
+  bbsio/doorparty:latest
+```
+
+You can also build this project yourself.
+
+```
+docker build -f build/package/Dockerfile -t bbsio/doorparty .
+```
+
 	
 ## Usage
 
