@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/echicken/dpc2?style=flat-square)](https://goreportcard.com/report/github.com/echicken/dpc2)
+[![Go Report Card](https://goreportcard.com/badge/github.com/echicken/dpc2?style=flat-square)](https://goreportcard.com/report/github.com/echicken/dpc2) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/echicken/dpc2/Create%20latest%20release%20from%20master?style=flat-square)
 
 # dpc2
 
