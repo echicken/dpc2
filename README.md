@@ -40,7 +40,7 @@ You may use the following environment variables to provide settings to doorparty
 
 ### Linux
 
-For automatic startup, a [systemd unit file](init/doorparty-connector.service) is available. It assumes that `doorparty-connector` and `doorparty-connector.ini` reside within `/opt/doorparty-connector`, so edit the path as needed.
+For automatic startup, a [systemd unit file](init/doorparty-connector.service) is available. It assumes that `doorparty-connector` and `doorparty-connector.ini` reside within `/opt/doorparty-connector`, so edit the path as needed. Paste the contents of [systemd unit file](init/doorparty-connector.service) into `/etc/systemd/system/doorparty-connector.service`. Make sure that you `chmod +x doorparty-connector` otherwise the service won't start. 
 
 If you use some other init system, you're on your own - but feel free to share your init script / config file / whatever and I can add it to this repo.
 
